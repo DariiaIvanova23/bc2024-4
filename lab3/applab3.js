@@ -25,3 +25,17 @@ catch (error) {
   console.error("Cannot find input file");
   process.exit(1);
 }
+
+
+const res = data
+.filter(d => d.parent === "BS3_BanksLiab")
+.map(d => `${d.txten}:${d.value}`);
+
+if (i.display) {
+    console.log(res.join('\n'));
+}
+
+if (i.output) {
+  const outputPath = path.resolve(i.output);
+  fs.writeFileSync(outputPath, res.join('\n'));
+}
