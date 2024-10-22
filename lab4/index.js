@@ -40,8 +40,16 @@ server.on('request', async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'image/jpeg' });
       res.end(data);
     } catch (error) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Картинку не знайдено в кеші');
+        try {
+            const response = await superagent.get(`https://http.cat/${code}`);
+            const filePath = getCacheFilePath(code);
+            await fsPromises.writeFile(filePath, response.body);
+            res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+            res.end(response.body);
+          } catch (fetchError) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Картинку не знайдено');
+          }
     }
   } else if (method === 'PUT') {
     let body = [];
