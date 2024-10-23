@@ -30,27 +30,34 @@ function getCacheFilePath(code) {
 
 
 server.on('request', async (req, res) => {
-  const { method, url } = req;
-  const code = url.slice(1);
-
-  if (method === 'GET') {
-    try {
-      const filePath = getCacheFilePath(code);
-      const data = await fsPromises.readFile(filePath);
-      res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-      res.end(data);
-    } catch (error) {
+    const { method, url } = req;
+    const code = url.slice(1);
+  
+    if (method === 'GET') {
+      try {
+        const filePath = getCacheFilePath(code);
+        const data = await fsPromises.readFile(filePath);
+        console.log(`Картинка знайдена в кеші: ${filePath}`);
+        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+        res.end(data);
+      } catch (error) {
+        console.error(`Картинку не знайдено в кеші. Спроба завантажити з http.cat: ${error.message}`);
         try {
-            const response = await superagent.get(`https://http.cat/${code}`);
-            const filePath = getCacheFilePath(code);
-            await fsPromises.writeFile(filePath, response.body);
-            res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-            res.end(response.body);
-          } catch (fetchError) {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('Картинку не знайдено');
-          }
-    }
+          const response = await superagent.get(`https://http.cat/${code}`);
+          console.log(`Запит до https://http.cat/${code} успішний`);
+          
+          const filePath = getCacheFilePath(code);
+          await fsPromises.writeFile(filePath, response.body);
+          console.log(`Картинка збережена в кеші: ${filePath}`);
+  
+          res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+          res.end(response.body);
+        } catch (fetchError) {
+          console.error(`Помилка завантаження з https://http.cat/${code}: ${fetchError.message}`);
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Картинку не знайдено');
+        }
+      }
   } else if (method === 'PUT') {
     let body = [];
     req.on('data', chunk => body.push(chunk));
